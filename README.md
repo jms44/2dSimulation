@@ -1,1 +1,1 @@
-Current 2D Door Opening Simulation using PyBox2D(installed via conda). Conda env yml file is provided to run yourself. ArmSimDataGen produces annotation files, PolicyNet trains a neural net on these files, and arm_sim auto runs the arm using the trained policy network.
+Current 2D Door Opening Simulation using PyBox2D(installed via conda). Conda env yml file is provided to run yourself. arm_sim_data_gen produces annotation files, PolicyNet trains a neural net on these files, and arm_sim_auto runs the arm using the trained policy network.
