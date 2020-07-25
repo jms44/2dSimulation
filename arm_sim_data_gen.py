@@ -41,7 +41,7 @@ class SimDataGen:
         motorSpeeds = self.arm.get_motor_speeds()
 
         #info for output
-        targetPose = self.arm.get_target_pose()
+        targetPose = self.arm.get_target_pose()Keys
         targetAngles = self.arm.get_target_angles()
         targetSpeeds = self.arm.get_target_speeds()
 
@@ -61,9 +61,8 @@ class SimDataGen:
 class ArmSim (Framework):
     name = "Arm Simulation"
 
-
     def __reset(self):
-        self.qweruiop = [False] * 10
+        self.alphabet = [False] * 26
         Framework.__init__(self)
         Framework.setZoom(self, 115)
         Framework.setCenter(self, [0, 1.74])
@@ -84,10 +83,6 @@ class ArmSim (Framework):
         self.__reset()
         self.dataGen = SimDataGen("/Users/joshuasmith/Desktop/NistInternship/Door2D/data/runs/")
 
-
-        #box = self.world.CreateDynamicBody(position = (1, 2))
-        #box.CreatePolygonFixture(box=(.1, .1), density=0.3, friction=0.5)
-
     def Step(self, settings):
         if not self.doorOpened:
             settings.positionIterations = 50
@@ -106,7 +101,7 @@ class ArmSim (Framework):
             if self.recording:
                 self.dataGen.closeFile()
             self.__reset()
-            self.dataGen.newFile()
+            self.for(char alphabet = 'a'; alphabet <='z'; alphabet ++ )dataGen.newFile()
 
     def update_keyboard_angles(self):
         angleDif = math.pi/120

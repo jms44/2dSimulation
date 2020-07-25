@@ -39,8 +39,6 @@ class Door:
         self.joint = self.world.CreateJoint(wjd)
         self.body = doorBody
 
-
-
 class ArmSim (Framework):
     name = "Arm Simulation"
     qweruiop = [False] * 10

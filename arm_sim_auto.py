@@ -10,7 +10,7 @@ from torch.autograd import Variable
 import torch
 import json
 import glob
-
+import random
 class ArmSim (Framework):
     name = "Arm Simulation"
 
@@ -22,7 +22,7 @@ class ArmSim (Framework):
         self.doorOpened = False
         self.recording = False
         self.reset = False
-        self.arm_angles = [1.2*math.pi/5, 4*math.pi/4, math.pi/2, math.pi/2, math.pi/2]
+        self.arm_angles = [random.uniform(math.pi/3, 2*math.pi/3), random.uniform(math.pi/3, 2*math.pi/3), math.pi/2, math.pi/2, math.pi/2]
         lengths = [1, 1, .4, .27]
         self.arm = Arm(self.world, self.arm_angles, lengths, basePos = (-.1, 0.08), motorLimit=4*math.pi/2)
         ground = self.world.CreateBody(position=(0, 0))
@@ -44,16 +44,19 @@ class ArmSim (Framework):
                 self.doorOpened = True
                 print("Door Successfully Opened")
 
-            x = DataLoader.get_observation(self.arm, self.door, labelFormat = 0)
+            x = DataLoader.get_observation(self.arm, self.door, labelFormat = 0)[0:23]
 
             with torch.no_grad():
-                pred = self.model(Variable(torch.from_numpy(x)).float())
+                inp = torch.from_numpy(x)
+                print(len(inp))
+                pred = self.model(Variable(inp).float())
                 pred = DataLoader.output_to_dict(pred)
 
-            targetSpeeds = pred['targetSpeeds'].data.numpy().astype('float')
-            print(targetSpeeds)
-            #elf.arm.set_target_angles(targetAngles)
-            self.arm.set_motor_speeds(targetSpeeds)
+            targetAngles = pred['targetSpeeds'].data.numpy().astype('float')
+            print(targetAngles)
+            self.arm.set_target_angles(targetAngles)
+            self.arm.update_arm()
+            #self.arm.set_motor_speeds(targetSpeeds)
 
         if self.reset:
             self.__reset()

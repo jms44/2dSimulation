@@ -5,8 +5,8 @@ import json
 
 class DataLoader:
 
-    xIndexFormats = [np.arange(0,19),]
-    yIndexFormats = [np.arange(31,36),]
+    xIndexFormats = [np.arange(0,23), np.arange(0,23)]
+    yIndexFormats = [np.arange(35,40), np.arange(30,35)]
 
     @staticmethod
     def output_to_dict(x, labelFormat = 0):
@@ -24,7 +24,7 @@ class DataLoader:
         doorPose = door.getPose()
         knobPose = door.getKnobPose()
         knobClawDif = [knobPose[0] - currentPose[-1][0], knobPose[1] - currentPose[-1][1]]
-        motorSpeeds = arm.get_motor_speeds()
+        motorSpeeds = arm.get_target_speeds()
 
         #info for output
         #targetPose = self.arm.get_target_pose()
@@ -37,9 +37,9 @@ class DataLoader:
         values.extend(DataLoader.flattenList(doorPose))
         values.extend(DataLoader.flattenList(knobPose))
         values.extend(DataLoader.flattenList(knobClawDif))
-        #values.extend(DataLoader.flattenList(motorSpeeds))
-
-        return np.array(values)[0:19]
+        values.extend(DataLoader.flattenList(motorSpeeds))
+        print(len(motorSpeeds))
+        return np.array(values)
 
 
     def __init__(self, batchSize = 12, labelFormat = 0, data_dir = "./data/runs/"):
@@ -111,8 +111,6 @@ class DataLoader:
         self.batchCount = 0
 
     def getNextBatch(self):
-        x = None
-        y = None
         startIndex = self.batchCount * self.batchSize
         if startIndex >= len(self.data):
             return None

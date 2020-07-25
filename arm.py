@@ -32,7 +32,7 @@ class Arm:
 
 
     def get_motor_speeds(self):
-        return [self.shoulderMotor.speed, self.elbowMotor.speed, self.wristMotor.speed, self.clawMotor.speed]
+        return [self.shoulderMotor.speed, self.elbowMotor.speed, self.wristMotor.speed, self.clawMotor.speed, self.clawMotor2.speed]
 
     def PD(self, target, d_gain = 0, p_gain = 5):
         current = self.get_angles()
@@ -52,10 +52,10 @@ class Arm:
 
     def update_arm(self):
         target = self.get_target_angles()
-        pos = self.get_target_pose()
-        ikAngles = self.det_inverse_kinematics(pos[0], pos[1], pos[2])
-        for i in range(3):
-            target[i] = ikAngles[i]
+        #pos = self.get_target_pose()
+        #ikAngles = self.det_inverse_kinematics(pos[0], pos[1], pos[2])
+        #for i in range(3):
+        #    target[i] = ikAngles[i]
         speeds = self.PD(target)
         self.set_target_angles(target)
         self.set_motor_speeds(speeds)
