@@ -35,7 +35,7 @@ class Door:
             lowerAngle=-math.pi/2,
             upperAngle=0.0001,
         )
-
+        
         self.joint = self.world.CreateJoint(wjd)
         self.body = doorBody
 
