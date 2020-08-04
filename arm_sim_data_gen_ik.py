@@ -32,7 +32,7 @@ class SimDataGen:
         with open(fileName, 'w') as outfile:
             json.dump(jsonDict, outfile)
 
-    def produceAnnotation(self, arm, door):
+    def produceAnnotation(self, arm, door, arm_speeds):
         self.arm = arm
         self.door = door
         #info for inputmotorLimit
@@ -46,7 +46,7 @@ class SimDataGen:
         #info for output
         targetPose = self.arm.get_target_pose()
         targetAngles = self.arm.get_target_angles().tolist()
-        targetSpeeds = self.arm.get_target_speeds().tolist()
+        targetSpeeds = self.arm.get_target_speeds()
 
         annot = {}
         annot['currentPose'] = currentPose
@@ -58,6 +58,7 @@ class SimDataGen:
         annot['targetPose'] = targetPose
         annot['targetAngles'] = targetAngles
         annot['targetSpeeds'] = targetSpeeds
+        annot['targetIKSpeeds'] = arm_speeds[0:4]
         self.jsonData.append(annot)
 
 class ArmSim (Framework):
@@ -70,27 +71,27 @@ class ArmSim (Framework):
         Framework.__init__(self)
         Framework.setZoom(self, 115)
         Framework.setCenter(self, [0, 1.74])
+        self.arm_speeds = [0,0,0,3,-3]
         self.wristAngle = math.pi/2
         self.doorOpened = False
         self.recording = False
         self.reset = False
-        self.arm_angles = [math.pi/2, math.pi/2, math.pi/2, math.pi/2, math.pi/2]
+        self.arm_angles = [math.pi/4, 3*math.pi/4, 3*math.pi/4, math.pi/2, math.pi/2]
         lengths = [1, 1, .4, .27]
         self.arm = Arm(self.world, self.arm_angles, lengths, basePos = (-.1, 0.08), motorRange=2*math.pi)
-        self.arm.target_pose[0] = random.uniform(-1, 1)
-        self.arm.target_pose[1] = random.uniform(1.5, 2.3)
 
-        ground = self.world.CreateBody(position=(0, 0))
-        ground.CreateEdgeChain([(-4, -2), (-4, .6), (-2, .6),(-2, 0),(2, 0),(2, 6),(4, 6),(4, -2), (-2, -2)])
+        #ground = self.world.CreateBody(position=(0, 0))
+        #ground.CreateEdgeChain([(-4, -2), (-4, .6), (-2, .6),(-2, 0),(2, 0),(2, 6),(4, 6),(4, -2), (-2, -2)])
 
         self.door = Door(self.world, (-2, .62), 1.2)
 
     def __init__(self):
         self.__reset()
-        self.dataGen = SimDataGen("./data/overfit/")
+        self.dataGen = SimDataGen("./data/runsIK/")
 
     def Step(self, settings):
         if not self.doorOpened:
+            #print(self.arm.get_points(self.arm.get_angles()))
             settings.positionIterations = 50
             settings.velocityIterations = 250
             if self.door.joint.angle < -math.pi/3:
@@ -98,10 +99,10 @@ class ArmSim (Framework):
                 print("Door Successfully Opened")
             Framework.Step(self, settings)
             self.update_keyboard_angles()
-            self.arm.update_arm(target_pose_mode = True)
+            self.arm.update_arm_IK(self.arm_speeds[0], self.arm_speeds[1], self.arm_speeds[2], self.arm_speeds[3])
             if self.recording:
                 print("recording")
-                self.dataGen.produceAnnotation(self.arm, self.door)
+                self.dataGen.produceAnnotation(self.arm, self.door, self.arm_speeds)
 
         if self.reset:
             print("reset")
@@ -113,6 +114,38 @@ class ArmSim (Framework):
             self.reset = False
 
     def update_keyboard_angles(self):
+
+        if self.alphabet[ascii_lowercase.index('a')]:
+            self.arm_speeds[0] = -1
+        elif self.alphabet[ascii_lowercase.index('d')]:
+            self.arm_speeds[0] = 1
+        else:
+            self.arm_speeds[0] = 0
+
+        if self.alphabet[ascii_lowercase.index('w')]:
+            self.arm_speeds[1] = 1
+        elif self.alphabet[ascii_lowercase.index('s')]:
+            self.arm_speeds[1] = -1
+        else:
+            self.arm_speeds[1] = 0
+
+        if self.alphabet[ascii_lowercase.index('j')]:
+            self.arm_speeds[2] = 1
+        elif self.alphabet[ascii_lowercase.index('l')]:
+            self.arm_speeds[2] = -1
+        else:
+            self.arm_speeds[2] = 0
+
+        if self.alphabet[ascii_lowercase.index('i')]:
+            self.arm_speeds[3] = -3
+            self.arm_speeds[4] = 3
+        elif self.alphabet[ascii_lowercase.index('k')]:
+            self.arm_speeds[3] = 3
+            self.arm_speeds[4] = -3
+
+
+
+
         angleDif = math.pi/120
         mid = (math.pi/2)
         max = mid+self.arm.motorRange/2
@@ -150,11 +183,11 @@ class ArmSim (Framework):
             if key == eval("Keys.K_" + letter):
                 self.alphabet[ascii_lowercase.index(letter)] = True
 
-        if self.alphabet[ascii_lowercase.index('a')]:
+        if self.alphabet[ascii_lowercase.index('b')]:
             self.recording = True
-        if self.alphabet[ascii_lowercase.index('s')]:
+        if self.alphabet[ascii_lowercase.index('n')]:
             self.recording = False
-        if self.alphabet[ascii_lowercase.index('d')]:
+        if self.alphabet[ascii_lowercase.index('m')]:
             print("reset")
             self.reset = True
 

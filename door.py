@@ -2,7 +2,7 @@ import math
 import Box2D
 from Box2D.examples.framework import (Framework, Keys, main)
 from Box2D import (b2Color, b2EdgeShape, b2FixtureDef, b2PolygonShape)
-
+import numpy as np
 class Door:
     def getPose(self):
         return self.pos
@@ -10,11 +10,11 @@ class Door:
     def getKnobPose(self):
         x = self.pos[0] - math.sin(self.body.angle - self.knobAngle)
         y = self.pos[1] + math.cos(self.body.angle - self.knobAngle)
-        return [x, y]
+        return np.array([x, y])
 
     def __init__(self, world, pos, length, thickness = 0.05):
         self.world = world
-        self.pos = pos
+        self.pos = np.array(pos)
         ground = self.world.CreateStaticBody(position=pos)
         p1 = [pos[0], pos[1] + length]
         doorBody = self.world.CreateDynamicBody(position=p1)

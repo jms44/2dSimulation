@@ -7,7 +7,9 @@ from door import Door
 from policy_net import Net
 from data_loader import DataLoader
 from torch.autograd import Variable
+from policy_net import my_loss
 import torch
+import numpy as np
 import json
 import glob
 import random
@@ -22,11 +24,13 @@ class ArmSim (Framework):
         self.doorOpened = False
         self.recording = False
         self.reset = False
-        self.arm_angles = [random.uniform(math.pi/3, 2*math.pi/3), random.uniform(math.pi/3, 2*math.pi/3), math.pi/2, math.pi/2, math.pi/2]
+        self.arm_angles = [random.uniform(math.pi/3, 2*math.pi/3), random.uniform(math.pi/3, 2*math.pi/3), random.uniform(math.pi/3, 2*math.pi/3), math.pi/2, math.pi/2]
+        #self.arm_angles = [math.pi/4, 3*math.pi/4, 2*math.pi/4, math.pi/2, math.pi/2]
+
         lengths = [1, 1, .4, .27]
-        self.arm = Arm(self.world, self.arm_angles, lengths, basePos = (-.1, 0.08), motorLimit=4*math.pi/2)
-        ground = self.world.CreateBody(position=(0, 0))
-        ground.CreateEdgeChain([(-4, -2), (-4, .6), (-2, .6),(-2, 0),(2, 0),(2, 6),(4, 6),(4, -2), (-2, -2)])
+        self.arm = Arm(self.world, self.arm_angles, lengths, basePos = (-.1, 0.08), motorRange=2*math.pi)
+        #ground = self.world.CreateBody(position=(0, 0))
+        #ground.CreateEdgeChain([(-4, -2), (-4, .6), (-2, .6),(-2, 0),(2, 0),(2, 6),(4, 6),(4, -2), (-2, -2)])
         self.model = Net(saved_path = "./saved/trained_model_dict.pt")
         self.door = Door(self.world, (-2, .62), 1.2)
 
@@ -44,18 +48,18 @@ class ArmSim (Framework):
                 self.doorOpened = True
                 print("Door Successfully Opened")
 
-            x = DataLoader.get_observation(self.arm, self.door, labelFormat = 0)[0:23]
+            x = DataLoader.get_observation(self.arm, self.door, labelFormat = 0)[0:24]
 
             with torch.no_grad():
                 inp = torch.from_numpy(x)
-                print(len(inp))
                 pred = self.model(Variable(inp).float())
                 pred = DataLoader.output_to_dict(pred)
 
-            targetAngles = pred['targetSpeeds'].data.numpy().astype('float')
-            print(targetAngles)
-            self.arm.set_target_angles(targetAngles)
-            self.arm.update_arm()
+            targetSpeeds = pred['targetSpeeds'].data.numpy().astype('float')
+            print(targetSpeeds)
+            self.arm.update_arm_IK(targetSpeeds[0], targetSpeeds[1], targetSpeeds[2], targetSpeeds[3])
+            #self.arm.set_target_angles(targetAngles)
+            #self.arm.update_arm()
             #self.arm.set_motor_speeds(targetSpeeds)
 
         if self.reset:

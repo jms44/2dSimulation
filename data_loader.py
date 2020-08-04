@@ -3,10 +3,11 @@ import glob
 import json
 
 
+
 class DataLoader:
 
-    xIndexFormats = [np.arange(0,23), np.arange(0,23)]
-    yIndexFormats = [np.arange(35,40), np.arange(30,35)]
+    xIndexFormats = [np.arange(0,24), np.arange(0,24), np.arange(0,24)]
+    yIndexFormats = [np.arange(34,39), np.arange(34,39),  np.arange(39,43)]
 
     @staticmethod
     def output_to_dict(x, labelFormat = 0):
@@ -19,12 +20,12 @@ class DataLoader:
     def get_observation(arm, door, labelFormat = 0):
 
         #info for input
-        currentPose = arm.get_points()
         currentAngles = arm.get_angles()
+        currentPose = arm.get_points(currentAngles)
         doorPose = door.getPose()
         knobPose = door.getKnobPose()
         knobClawDif = [knobPose[0] - currentPose[-1][0], knobPose[1] - currentPose[-1][1]]
-        motorSpeeds = arm.get_target_speeds()
+        motorSpeeds = arm.get_motor_speeds()
 
         #info for output
         #targetPose = self.arm.get_target_pose()
@@ -35,12 +36,16 @@ class DataLoader:
         values.extend(DataLoader.flattenList(currentPose))
         values.extend(DataLoader.flattenList(currentAngles))
         values.extend(DataLoader.flattenList(doorPose))
-        values.extend(DataLoader.flattenList(knobPose))
-        values.extend(DataLoader.flattenList(knobClawDif))
-        values.extend(DataLoader.flattenList(motorSpeeds))
-        print(len(motorSpeeds))
-        return np.array(values)
 
+        values.extend(DataLoader.flattenList(knobPose))
+        print(len(values))
+
+        values.extend(DataLoader.flattenList(knobClawDif))
+        print(len(values))
+
+        values.extend(DataLoader.flattenList(motorSpeeds))
+        print(len(values))
+        return np.array(values)
 
     def __init__(self, batchSize = 12, labelFormat = 0, data_dir = "./data/runs/"):
         self.indexLookup = None
@@ -100,12 +105,22 @@ class DataLoader:
                 if update: self.indexLookup.append(len(annot))
                 annot.extend(self.flattenList(point['targetSpeeds']))#annot[8] = point['targetSpeeds']
                 if update: self.indexLookup.append(len(annot))
-                runList.append(np.array(annot))
+                annot.extend(self.flattenList(point['targetIKSpeeds']))
+                if update: self.indexLookup.append(len(annot))
+                if self.filterPoint(annot): runList.append(np.array(annot))
 
 
         npArray = np.array(runList)
         np.random.shuffle(npArray)
         return npArray
+    def filterPoint(self, annot):
+        validPoint = False
+        speedThresh = 0.02
+        for speed in annot[-4:]:
+            if abs(speed) > speedThresh:
+                validPoint = True
+        return validPoint
+
 
     def reset(self):
         self.batchCount = 0
@@ -119,7 +134,7 @@ class DataLoader:
         return batchData[:, self.xIndexFormats[self.labelFormat]], batchData[:, self.yIndexFormats[self.labelFormat]]
 
 if __name__ == "__main__":
-    loader = DataLoader(2)
+    loader = DataLoader(2, data_dir = "./data/runsIK/")
     sum = 0
     print(loader.indexLookup)
     for x, y in iter(loader):
